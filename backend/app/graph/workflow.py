@@ -67,6 +67,16 @@ async def node_resolve_location_and_time(state: InvestigationState) -> Investiga
     lat = state.get("latitude")
     lon = state.get("longitude")
     place = state.get("place_text")
+    text = state.get("original_text", "")
+
+    # If place or coordinates were not explicitly provided, extract from report text
+    if not place and (lat is None or lon is None):
+        geocoder = GeocodingService()
+        for key in geocoder.KNOWN_COORDINATES.keys():
+            if key in text.lower():
+                place = key.title()
+                state["place_text"] = place
+                break
 
     if (lat is None or lon is None) and place:
         geocoder = GeocodingService()
@@ -338,6 +348,12 @@ async def run_investigation_workflow(report_id: str, db: AsyncSession) -> Invest
     investigation.status = ReportStatus.NEEDS_REVIEW if final_state["review_required"] else ReportStatus.COMPLETED
     investigation.completed_at = datetime.now(timezone.utc)
     report.status = investigation.status
+    if final_state.get("place_text") and not report.place_text:
+        report.place_text = final_state["place_text"]
+    if final_state.get("latitude") and not report.latitude:
+        report.latitude = final_state["latitude"]
+    if final_state.get("longitude") and not report.longitude:
+        report.longitude = final_state["longitude"]
 
     await db.commit()
     await db.refresh(investigation)
