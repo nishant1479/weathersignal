@@ -1,0 +1,16 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=sqlite+aiosqlite:///./weathersignal.db
+      - LLM_PROVIDER=deterministic
+      - IMD_API_BASE_URL=https://api.imd.gov.in/api/v1
+      - IMD_API_KEY=
+      - OPEN_METEO_BASE_URL=https://archive-api.open-meteo.com/v1/archive
+      - GEOCODING_PROVIDER=nominatim
+    restart: unless-stopped
